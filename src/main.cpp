@@ -15,8 +15,10 @@ while (true) {
     getline(cin, command);
     vector<string> args;
     vector<string> tokens;
+    vector<string> commands;
     string token;
     istringstream stream(command);
+    commands = { "echo", "type", "exit" };
     while (getline(stream, token, ' ')) {
         tokens.push_back(token);
     }
@@ -28,6 +30,14 @@ while (true) {
         cout << tokens[i] << " ";
       }
       cout << endl;
+    }
+    else if (tokens[0] == "type"){
+      if (find(commands.begin(), commands.end(), tokens[1]) != commands.end()) {
+        cout << tokens[1] << " is a shell builtin" << endl;
+      }
+      else {
+        cout << tokens[1] << ": not found" << endl;
+      }
     }
     else {
       cout << command << ": command not found" << endl;
