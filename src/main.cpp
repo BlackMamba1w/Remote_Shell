@@ -69,7 +69,37 @@ while (true) {
       }
     }
     else {
-      cout << command << ": command not found" << endl;
+      const char* path = getenv("PATH");
+        if (path != nullptr) {
+          string pathStr(path);
+          istringstream pathStream(pathStr);
+          string dir;
+          bool found = false;
+          while (getline(pathStream, dir, ':')) {
+            string fullPath = dir + "/" + tokens[0];
+            if (ifstream(fullPath).good() && is_executable(fullPath)) {
+              found = true;
+              string cmd;
+              for (int i = 0; i < tokens.size(); i++) {
+                cmd += tokens[i] + " ";
+              }
+              FILE* pipe = popen(cmd.c_str(), "r");
+              if (!pipe) {
+                cout << "Failed to run command" << endl;
+                return 1;
+              }
+              char buffer[128]; 
+              while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+                cout << buffer;
+              }
+              pclose(pipe);
+              break;
+            }
+          }
+          if (!found) {
+            cout << tokens[0] << ": command not found" << endl;
+          }
+        }
     }
 }
 }
