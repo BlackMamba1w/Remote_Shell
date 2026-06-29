@@ -1,5 +1,7 @@
 #include <iostream>
 #include <string>
+#include <vector>
+#include <sstream>
 using namespace std;
 int main() {
   // Flush after every std::cout / std:cerr
@@ -11,7 +13,7 @@ while (true) {
     cout << "$ ";
     string command;
     getline(cin, command);
-    string[] args;
+    vector<string> args;
     args = split(command, ' ');
     if (command == "exit") {
       break;
