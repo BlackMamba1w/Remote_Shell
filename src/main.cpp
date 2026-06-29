@@ -2,7 +2,19 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <ostream>
+#include <fstream>
+#include <cstdlib>
+#include <filesystem>
 using namespace std;
+bool is_executable(const std::filesystem::path& p) {
+    std::error_code ec;
+    auto perms = std::filesystem::status(p, ec).permissions();
+    if (ec) return false; // file doesn't exist, no access, etc.
+    using std::filesystem::perms;
+    return (perms & (perms::owner_exec | perms::group_exec | perms::others_exec))
+            != perms::none;
+}
 int main() {
   // Flush after every std::cout / std:cerr
   cout << unitbuf;
@@ -36,7 +48,24 @@ while (true) {
         cout << tokens[1] << " is a shell builtin" << endl;
       }
       else {
-        cout << tokens[1] << ": not found" << endl;
+        const char* path = getenv("PATH");
+        if (path != nullptr) {
+          string pathStr(path);
+          istringstream pathStream(pathStr);
+          string dir;
+          bool found = false;
+          while (getline(pathStream, dir, ':')) {
+            string fullPath = dir + "/" + tokens[1];
+            if (ifstream(fullPath).good() && is_executable(fullPath)) {
+              cout << tokens[1] << " is " << fullPath << endl;
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            cout << tokens[1] << ": not found" << endl;
+          }
+        }
       }
     }
     else {
