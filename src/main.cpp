@@ -11,7 +11,8 @@ while (true) {
     cout << "$ ";
     string command;
     getline(cin, command);
-    string[] args = split(command, ' ');
+    string[] args;
+    args = split(command, ' ');
     if (command == "exit") {
       break;
     }
