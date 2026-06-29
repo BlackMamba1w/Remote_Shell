@@ -14,13 +14,18 @@ while (true) {
     string command;
     getline(cin, command);
     vector<string> args;
-    args = split(command, ' ');
+    vector<string> tokens;
+    string token;
+    istringstream stream(command);
+    while (getline(stream, token, ' ')) {
+        tokens.push_back(token);
+    }
     if (command == "exit") {
       break;
     }
-    else if (args[0] == "echo") {
-      for (int i = 1; i < args.size(); i++) {
-        cout << args[i] << " ";
+    else if (tokens[0] == "echo") {
+      for (int i = 1; i < tokens.size(); i++) {
+        cout << tokens[i] << " ";
       }
       cout << endl;
     }
