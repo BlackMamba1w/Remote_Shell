@@ -11,14 +11,14 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 using namespace std;
-vector<string> parseShellArgs(const string& cmd) {
+vector<string> parseShellArgs(const string& cmd, char delimiter) {
     vector<string> args;
     string current;
     bool inQuotes = false;
     bool tokenStarted = false; 
     for (size_t i = 0; i < cmd.size(); ++i) {
         char c = cmd[i];
-        if (c == '\'') {
+        if (c == delimiter) {
             inQuotes = !inQuotes;
             tokenStarted = true; 
         }
@@ -38,17 +38,6 @@ vector<string> parseShellArgs(const string& cmd) {
         args.push_back(current);
     }
     return args;
-}
-string finalstr(string str, int n){
-  vector<string> args = parseShellArgs(str.substr(n));
-  string result;
-  for (size_t i = 0; i < args.size(); ++i) {
-    result += args[i];
-    if (i != args.size() - 1) {
-      result += " ";
-    }
-  }
-  return result;
 }
 vector<int> ocurrences(string str, char ch) {
     vector<int> positions;
@@ -77,7 +66,7 @@ bool is_executable(const std::filesystem::path& p) {
 bool hasQuotes(const string& str) {
     int count = 0;
     for (char ch : str) {
-        if (ch == '\'') { // single quote character
+        if (ch == '\'' || ch == '\"') { // single or double quote character
             count++;
         }
     }
@@ -119,15 +108,21 @@ int main() {
         }
         else if (tokens[0] == "echo") {
           if (hasQuotes(command)) {
-            cout << finalstr(command, 5) << endl;
+              char quoteChar = (command.find('"') != string::npos) ? '"' : '\'';
+              vector<string> args = parseShellArgs(command, quoteChar);
+              for (size_t i = 1; i < args.size(); ++i) {
+                  cout << args[i];
+                  if (i + 1 < args.size()) cout << " ";
+              }
+              cout << endl;
           }
           else {
-            for (size_t i = 1; i < tokens.size(); ++i) {
-              cout << trim(tokens[i]) << " ";
-            }
-            cout << endl;
-          }
-      }
+              for (size_t i = 1; i < tokens.size(); ++i) {
+                  cout << trim(tokens[i]) << " ";
+              }
+              cout << endl;
+    }
+}
         else if (tokens[0] == "type"){
           if (find(commands.begin(), commands.end(), tokens[1]) != commands.end()) {
             cout << tokens[1] << " is a shell builtin" << endl;
@@ -166,7 +161,13 @@ int main() {
                   found = true;
                   pid_t pid = fork();
                   if (pid == 0) { // Child process
-                    vector<string> execArgs = parseShellArgs(command);
+                    vector<string> execArgs;
+                    if (command.find('\"') != string::npos){
+                      execArgs = parseShellArgs(command,'\"');
+                    }
+                    else {
+                      execArgs = parseShellArgs(command,'\'');
+                    }
                     vector<char*> argv;
                     for (const auto& arg : execArgs) {
                       argv.push_back(const_cast<char*>(arg.c_str()));
