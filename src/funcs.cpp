@@ -15,8 +15,8 @@
 #include "funcs.hpp"
 using namespace std;
 void execution( const vector<string>& tokens) {
-        const char* path = getenv("PATH");
-        if (path != nullptr) {
+    const char* path = getenv("PATH");
+    if (path != nullptr) {
         string pathStr(path);
         istringstream pathStream(pathStr);
         string dir;
@@ -28,6 +28,9 @@ void execution( const vector<string>& tokens) {
             found = true;
             break;
             }
+        }
+        if (!found) {
+            cout << tokens[1] << ": not found" << endl;
         }
     }
 }
