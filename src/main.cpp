@@ -70,7 +70,6 @@ int main() {
           execution(tokens);
         }
       }
-      }
       else {
         const char* path = getenv("PATH");
         if (path != nullptr) {
