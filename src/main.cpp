@@ -73,7 +73,7 @@ int main() {
           string dir;
           bool found = false;
           while (getline(pathStream, dir, ':')) {
-            string fullPath = dir + "/" + tokens[0];
+            string fullPath = dir + "/" + parseShellArgs(command)[0];
             if (ifstream(fullPath).good() && is_executable(fullPath)) {
               found = true;
               pid_t pid = fork();
@@ -88,7 +88,7 @@ int main() {
                 execvp(fullPath.c_str(), argv.data());
                 cerr << "Error executing command: " << endl;
                 _exit(1); // Exit child process on error
-            }
+              }
               else if (pid > 0) { // Parent process
                 int status;
                 waitpid(pid, &status, 0);
