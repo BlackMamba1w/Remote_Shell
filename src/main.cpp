@@ -47,13 +47,8 @@ int main() {
         }
         else if (tokens[0] == "echo") {
           if (hasQuotes(command)) {
-            char quoteChar = (command.find('"') != string::npos) ? '"' : '\'';
-            vector<string> args = parseShellArgs(command, quoteChar);
-            for (size_t i = 1; i < args.size(); ++i) {
-              cout << args[i];
-              if (i + 1 < args.size()) cout << " ";
-            }
-            cout << endl;
+            vector<string> args = parseShellArgs(command);
+            cout << combineArgs(args) << endl;
           }
           else {
             for (size_t i = 1; i < tokens.size(); ++i) {
@@ -84,12 +79,7 @@ int main() {
               pid_t pid = fork();
               if (pid == 0) { // Child process
                 vector<string> execArgs;
-                if (command.find('\"') != string::npos){
-                  execArgs = parseShellArgs(command,'\"');
-                }
-                else {
-                  execArgs = parseShellArgs(command,'\'');
-                }
+                execArgs = parseShellArgs(command);
                 vector<char*> argv;
                 for (const auto& arg : execArgs) {
                   argv.push_back(const_cast<char*>(arg.c_str()));

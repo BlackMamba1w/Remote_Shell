@@ -1,5 +1,3 @@
-#include "funcs.hpp"
-
 #include <iostream>
 #include <string>
 #include <vector>
@@ -34,40 +32,78 @@ void execution( const vector<string>& tokens) {
         }
     }
 }
-vector<string> parseShellArgs(const string& cmd, char delimiter) {
+vector<string> parseShellArgs(const string& cmd) {
     vector<string> args;
     string current;
-    bool inQuotes = false;
-    bool tokenStarted = false; 
+    bool inSingleQuotes = false;
+    bool inDoubleQuotes = false;
+    bool tokenStarted = false;
     for (size_t i = 0; i < cmd.size(); ++i) {
         char c = cmd[i];
-        if (c == delimiter && cmd[i-1] != '\\') { // Check for unescaped quote
-            inQuotes = !inQuotes;
-            tokenStarted = true; 
+        if (inSingleQuotes) {
+            if (c == '\'') {
+                inSingleQuotes = false;
+            } else {
+                current += c;
+                tokenStarted = true;
+            }
         }
-        else if ((c == ' ' || c == '\t') && !inQuotes) {
-            if (tokenStarted) {
-                args.push_back(current);
-                current.clear();
-                tokenStarted = false;
+        else if (inDoubleQuotes) {
+            if (c == '"') {
+                inDoubleQuotes = false;
+            }
+            else if (c == '\\' && i + 1 < cmd.size()) {
+                char next = cmd[i + 1];
+                if (next == '"' || next == '\\' || next == '\'' ) {
+                    current += next;
+                    ++i;
+                } else {
+                    current += c;
+                }
+                tokenStarted = true;
+            }
+            else {
+                current += c;
+                tokenStarted = true;
             }
         }
         else {
-            current += c;
-            tokenStarted = true;
+            if (c == '\'') {
+                inSingleQuotes = true;
+                tokenStarted = true; 
+            }
+            else if (c == '"') {
+                inDoubleQuotes = true;
+                tokenStarted = true;
+            }
+            else if (c == '\\' && i + 1 < cmd.size()) {
+                current += cmd[++i];
+                tokenStarted = true;
+            }
+            else if (c == ' ' || c == '\t') {
+                if (tokenStarted) {
+                    args.push_back(current);
+                    current.clear();
+                    tokenStarted = false;
+                }
+            }
+            else {
+                current += c;
+                tokenStarted = true;
+            }
         }
     }
     if (tokenStarted) {
         args.push_back(current);
     }
-    for (auto& arg : args) {
-        for (size_t i = 0; i < arg.size(); ++i) {
-            if (arg[i] == '\\' && arg[i-1] != '\\') { // Check for unescaped backslash
-                arg.erase(i, 1); // Remove the backslash
-            }
-        }
-    }
     return args;
+}
+string combineArgs (const vector<string>& args){
+    string combined;
+    for (int i = 1; i < args.size(); ++i) {
+        combined += args[i] + " ";
+    }
+    return combined.substr(0, combined.size() - 1);
 }
 vector<int> ocurrences(string str, char ch) {
     vector<int> positions;
@@ -97,10 +133,19 @@ bool is_executable(const std::filesystem::path& p) {
 }
 bool hasQuotes(const string& str) {
     int count = 0;
-    for (char ch : str) {
-        if (ch == '\'' || ch == '\"') { // single or double quote character
+    for (size_t i = 0; i < str.size(); ++i) {
+        if (( str[i] == '\'' && str[i-1] != '\\') || (str[i] == '\"' && str[i-1] != '\\' )) { // single or double quote character
             count++;
         }
     }
     return count > 1;
+}
+string removeCharacters(const string& str, char ch) {
+    string result;
+    for (char c : str) {
+        if (c != ch) {
+            result += c;
+        }
+    }
+    return result;
 }
