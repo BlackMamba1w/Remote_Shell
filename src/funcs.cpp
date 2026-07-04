@@ -11,8 +11,136 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 #include "funcs.hpp"
+#include <stdio.h>
+#include <errno.h>
+#include <fcntl.h>
+#define CHUNK_SIZE 1024
 using namespace std;
-void execution( const vector<string>& tokens) {
+vector<string> commands = { "echo", "type", "exit" };
+string readFile(const vector<string>& args){
+    size_t redirectPos = string::npos;
+    string result;
+    for (size_t i = 0; i < args.size(); ++i) {
+        if (args[i] == ">" || args[i] == "1>") {
+            redirectPos = i;
+            break;
+        }
+    }
+    if (filesystem::exists(args[redirectPos - 1])) {
+        ifstream inFile(args[redirectPos - 1]);
+        string line;
+        while (getline(inFile, line)) {
+            result += line + '\n';
+        }
+        inFile.close();
+    }
+    return result;
+}
+void echo(const string& command, const vector<string>& tokens){
+    if (hasQuotes(command)) {
+        vector<string> args = parseShellArgs(command);
+        cout << combineArgs(args) << endl;
+    }
+    else {
+        for (size_t i = 1; i < tokens.size(); ++i) {
+            cout << trim(tokens[i]) << " ";
+        }
+        cout << endl;
+    }
+}
+void writeFile(const string& res, const vector<string>& args){
+    size_t redirectPos = string::npos;
+    for (size_t i = 0; i < args.size(); ++i) {
+        if (args[i] == ">" || args[i] == "1>") {
+            redirectPos = i;
+            break;
+        }
+    }
+    if (filesystem::exists(args[redirectPos + 1])){
+        ofstream outFile(args[redirectPos + 1]);
+        outFile << res;
+        outFile.close();
+    }
+    else{
+        ofstream file(args[redirectPos + 1]);
+        file << res;
+        file.close();
+    }
+}
+void redirection(const vector<string>& execArgs) {
+    if (execArgs[0] == "echo"){
+        writeFile(readFile(execArgs), execArgs);
+    }
+    if (execArgs[0] == "type"){
+        string res;
+        if (find(commands.begin(), commands.end(), execArgs[1]) != commands.end()) {
+            res += execArgs[1] + " is a shell builtin";
+            writeFile(res, execArgs);
+        }
+        else {
+            const char* path = getenv("PATH");
+            if (path != nullptr) {
+                string pathStr(path);
+                istringstream pathStream(pathStr);
+                string dir;
+                bool found = false;
+                while (getline(pathStream, dir, ':')) {
+                    string fullPath = dir + "/" + execArgs[1];
+                    if (ifstream(fullPath).good() && is_executable(fullPath)) {
+                    res += execArgs[1] + " is " + fullPath;
+                    found = true;
+                    break;
+                    }
+                }
+            }
+            writeFile(res, execArgs);
+        }
+    }
+    else {
+        size_t redirectPos = string::npos;
+        for (size_t i = 0; i < execArgs.size(); ++i) {
+            if (execArgs[i] == ">" || execArgs[i] == "1>") {
+                redirectPos = i;
+                break;
+            }
+        }
+        if (redirectPos == string::npos || redirectPos + 1 >= execArgs.size()) {
+            cerr << "Redirection syntax error.\n";
+            return;
+        }
+        vector<char*> argv;
+        for (size_t i = 0; i < redirectPos; ++i) {
+            argv.push_back(const_cast<char*>(execArgs[i].c_str()));
+        }
+        argv.push_back(nullptr);
+        const char* outFile = execArgs[redirectPos + 1].c_str();
+        pid_t pid = fork();
+        if (pid < 0) {
+            perror("fork");
+            return;
+        }
+        if (pid == 0) { 
+            int fd = open(outFile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+            if (fd < 0) {
+                perror("open");
+                exit(1);
+            }
+            if (dup2(fd, STDOUT_FILENO) == -1) {
+                perror("dup2");
+                exit(1);
+            }
+            close(fd);
+            execvp(argv[0], argv.data());
+            cerr << "execvp failed" << endl;
+            exit(1);
+        }
+        else {
+            waitpid(pid, nullptr, 0);
+        }
+    }
+}
+
+void execution(const vector<string>& tokens) {
     const char* path = getenv("PATH");
     if (path != nullptr) {
         string pathStr(path);
@@ -98,7 +226,7 @@ vector<string> parseShellArgs(const string& cmd) {
     }
     return args;
 }
-string combineArgs (const vector<string>& args){
+string combineArgs (const vector<string>& args) {
     string combined;
     for (int i = 1; i < args.size(); ++i) {
         combined += args[i] + " ";
@@ -123,11 +251,11 @@ string trim(string s) {
     }
     return result;
 }
-bool is_executable(const std::filesystem::path& p) {
-    std::error_code ec;
-    auto perms = std::filesystem::status(p, ec).permissions();
+bool is_executable(const filesystem::path& p) {
+    error_code ec;
+    auto perms = filesystem::status(p, ec).permissions();
     if (ec) return false; // file doesn't exist, no access, etc.
-    using std::filesystem::perms;
+    using filesystem::perms;
     return (perms & (perms::owner_exec | perms::group_exec | perms::others_exec))
             != perms::none;
 }
