@@ -23,3 +23,5 @@ One can run the shell via *WSL* or *Terminal* by travelling to the directory and
 1. Ensure you have `cmake` installed locally
 2. Run `./QShell.sh` to run your program, which is implemented in
    `src/main.cpp`.
+# Contact author
+Contact the author of this shell to suggest any improvements @ *k.sainandan2011@gmail.com* ! Will respond in 3-5 business days. Project is still only 10-15% complete, aiming to complete by the end of july.
