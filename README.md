@@ -1,5 +1,4 @@
-[![progress-banner](<img width="423" height="237" alt="image" src="https://github.com/user-attachments/assets/dbe48add-4c1d-4cab-adea-c594cd319d9c" />
-)](https://app.codecrafters.io/users/BlackMamba1w?r=2qF)
+[![progress-banner](https://github.com/user-attachments/assets/dbe48add-4c1d-4cab-adea-c594cd319d9c)](https://app.codecrafters.io/users/BlackMamba1w?r=2qF)
 
 This is my solution and implementation to the ["Build Your Own Shell" Challenge](https://app.codecrafters.io/courses/shell/overview).
 
